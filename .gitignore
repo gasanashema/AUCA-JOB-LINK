@@ -1,0 +1,33 @@
+node_modules
+dist
+.env
+.DS_Store
+.vscode
+npm-debug.log
+yarn-error.log
+coverage
+/.idea
+*.log
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

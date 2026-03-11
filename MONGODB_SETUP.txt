@@ -1,0 +1,57 @@
+MONGODB INSTALLATION GUIDE
+==========================
+
+Your login/register buttons are not working because MongoDB is not installed.
+
+OPTION 1: Install MongoDB Community (Recommended)
+--------------------------------------------------
+1. Download MongoDB Community Server:
+   https://www.mongodb.com/try/download/community
+
+2. Install it (use default settings)
+
+3. After installation, open a NEW terminal and run:
+   mongod
+
+4. Keep that terminal open (MongoDB must stay running)
+
+5. Restart your backend:
+   cd d:\AUCA JOB-LINK\backend
+   node server.js
+
+6. Now your login/register will work!
+
+
+OPTION 2: Use MongoDB Atlas (Cloud - No Installation)
+------------------------------------------------------
+1. Go to: https://www.mongodb.com/cloud/atlas/register
+
+2. Create a free account
+
+3. Create a free cluster
+
+4. Get your connection string
+
+5. Update backend\.env file with the connection string
+
+6. Restart backend
+
+
+QUICK TEST:
+-----------
+After MongoDB is running, test registration:
+
+1. Go to: http://localhost:5174/register
+2. Fill in the form
+3. Click Register
+4. If successful, you'll see "Registration successful!"
+5. Then you can login
+
+
+CURRENT STATUS:
+---------------
+✅ Backend: Running on port 5000
+✅ Frontend: Running on port 5174
+❌ MongoDB: NOT RUNNING (this is why buttons don't work)
+
+Once MongoDB is running, everything will work!

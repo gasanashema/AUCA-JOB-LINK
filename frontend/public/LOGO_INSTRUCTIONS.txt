@@ -1,0 +1,17 @@
+AUCA LOGO SETUP INSTRUCTIONS
+=============================
+
+Please add your AUCA logo image to this folder with the name: logo.png
+
+The logo should be:
+- Named exactly: logo.png
+- Format: PNG (with transparent background recommended)
+- Size: 500x500 pixels or similar square dimensions
+- Location: d:\AUCA JOB-LINK\frontend\public\logo.png
+
+Once you add the logo.png file, it will automatically appear on:
+1. Login page (centered at top)
+2. Student Dashboard (top left navbar)
+3. Admin Dashboard (top left navbar)
+
+If you don't have a logo yet, you can download the AUCA logo or use a temporary placeholder.

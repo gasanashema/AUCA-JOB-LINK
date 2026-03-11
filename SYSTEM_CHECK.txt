@@ -1,0 +1,68 @@
+mkdir C:\data\dbAUCA JOB-LINK - SYSTEM CHECK
+=============================
+
+✅ BACKEND: Running on port 5000
+✅ FRONTEND: Running on port 5174
+✅ LOGO: Added to frontend/public/logo.png
+
+ACCESS YOUR WEBSITE:
+--------------------
+Open browser: http://localhost:5174
+
+WHAT TO TEST:
+-------------
+
+1. LOGIN PAGE (http://localhost:5174)
+   ✓ AUCA logo should appear at top
+   ✓ Email placeholder shows: "student@auca.ac.rw"
+   ✓ Purple gradient background
+   ✓ Register link at bottom
+
+2. REGISTER PAGE (http://localhost:5174/register)
+   ✓ AUCA logo at top
+   ✓ Can select Student or Admin role
+   ✓ Email placeholder example
+
+3. TEST LOGIN (Need to register first!)
+   Step 1: Go to Register page
+   Step 2: Create account (Student or Admin)
+   Step 3: Login with credentials
+
+4. STUDENT DASHBOARD (after student login)
+   ✓ White navbar with AUCA logo
+   ✓ Shows job opportunities in grid
+   ✓ Each job has Apply button
+   ✓ Logout button works
+
+5. ADMIN DASHBOARD (after admin login)
+   ✓ Dark navbar with AUCA logo
+   ✓ Left side: Post new job form
+   ✓ Right side: List of posted jobs
+   ✓ Can delete jobs
+   ✓ Logout button works
+
+COMMON ISSUES:
+--------------
+
+❌ "Cannot connect" error
+   → MongoDB not running
+   → Solution: Open terminal, run: mongod
+
+❌ Login fails
+   → Backend not connected to MongoDB
+   → Check backend terminal for errors
+
+❌ Logo not showing
+   → Clear browser cache (Ctrl+Shift+R)
+   → Check logo.png exists in frontend/public/
+
+❌ Page blank/white
+   → Check browser console (F12)
+   → Look for JavaScript errors
+
+NEED HELP?
+----------
+1. Open browser console (F12)
+2. Check for red error messages
+3. Check backend terminal for errors
+4. Make sure MongoDB is running
