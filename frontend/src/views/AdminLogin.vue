@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import { useAuthStore } from '../stores/authStore';
 
 export default {
   data() {
@@ -25,25 +25,17 @@ export default {
     async login() {
       try {
         this.error = "";
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/auth/login`,
-          {
-            email: this.email,
-            password: this.password
-          }
-        );
+        const authStore = useAuthStore();
+        const res = await authStore.login(this.email, this.password);
 
-        if (res.data.role !== "admin") {
+        if (res.role !== "admin") {
           this.error = "Access denied. Admin only.";
           return;
         }
 
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("role", res.data.role);
-
         window.location.href = "/admin-dashboard";
       } catch (err) {
-        this.error = err.response?.data?.message || "Login failed.";
+        this.error = err.message || "Login failed.";
       }
     }
   }

@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import { useAuthStore } from '../stores/authStore';
 
 export default {
   data() {
@@ -37,20 +37,16 @@ export default {
     async login() {
       try {
         this.error = "";
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/auth/login`,
-          {
-            email: this.email,
-            password: this.password
-          }
-        );
+        const authStore = useAuthStore();
+        const res = await authStore.login(this.email, this.password);
 
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("role", res.data.role);
-
-        window.location.href = "/dashboard";
+        if (res.role === 'admin') {
+          window.location.href = "/admin-dashboard";
+        } else {
+          window.location.href = "/dashboard";
+        }
       } catch (err) {
-        this.error = err.response?.data?.message || "Invalid credentials. Please check your email and password.";
+        this.error = err.message || "Invalid credentials. Please check your email and password.";
       }
     }
   }

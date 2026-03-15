@@ -10,13 +10,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   const login = async (email, password) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/login`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         email,
         password
       });
       token.value = res.data.token;
-      user.value = res.data.user;
+      user.value = { role: res.data.role, name: res.data.name, email: res.data.email };
       localStorage.setItem('token', token.value);
+      localStorage.setItem('role', res.data.role);
       return res.data;
     } catch (err) {
       throw err.response?.data || err;
@@ -25,7 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const register = async (name, email, password, role) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/register`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         name,
         email,
         password,
@@ -34,6 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = res.data.token;
       user.value = res.data.user;
       localStorage.setItem('token', token.value);
+      localStorage.setItem('role', res.data.user.role);
       return res.data;
     } catch (err) {
       throw err.response?.data || err;

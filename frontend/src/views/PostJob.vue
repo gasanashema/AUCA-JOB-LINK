@@ -73,9 +73,7 @@ export default {
         this.success = "";
         
         await axios.post(
-          cd "D:\AUCA JOB-LINK (2) (1)\AUCA JOB-LINK\frontend\auca-job-link-frontend"
-          npm install
-          npm run dev          `${import.meta.env.VITE_API_URL}/api/jobs`,
+          `${import.meta.env.VITE_API_URL}/api/jobs`,
           {
             title: this.title,
             company: this.company,
