@@ -41,6 +41,7 @@ async function seedDatabase() {
 
     const employerPassword = await bcrypt.hash("password123", 10);
     const adminPassword = await bcrypt.hash("admin123", 10);
+    const studentPassword = await bcrypt.hash("student123", 10);
 
     let employer = await User.findOne({ email: "employer@auca.rw" });
     if (!employer) {
@@ -71,6 +72,22 @@ async function seedDatabase() {
       adminExists.password = adminPassword;
       await adminExists.save();
       console.log("✅ Updated admin password");
+    }
+
+    // Create student user for testing
+    const studentExists = await User.findOne({ email: 'student@auca.ac.rw' });
+    if (!studentExists) {
+      await User.create({
+        name: 'Demo Student',
+        email: 'student@auca.ac.rw',
+        password: studentPassword,
+        role: 'job_seeker'
+      });
+      console.log("✅ Created demo student user");
+    } else {
+      studentExists.password = studentPassword;
+      await studentExists.save();
+      console.log("✅ Updated demo student password");
     }
 
     // Check and insert jobs only if they don't exist
