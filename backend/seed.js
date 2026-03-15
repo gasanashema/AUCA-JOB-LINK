@@ -51,6 +51,10 @@ async function seedDatabase() {
         role: "employer",
       });
       console.log("✅ Created demo employer user");
+    } else {
+      employer.password = employerPassword;
+      await employer.save();
+      console.log("✅ Updated demo employer password");
     }
 
     // Create admin user for testing
@@ -63,6 +67,10 @@ async function seedDatabase() {
         role: 'admin'
       });
       console.log("✅ Created admin user");
+    } else {
+      adminExists.password = adminPassword;
+      await adminExists.save();
+      console.log("✅ Updated admin password");
     }
 
     // Check and insert jobs only if they don't exist
