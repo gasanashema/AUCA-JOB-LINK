@@ -65,16 +65,20 @@ async function seedDatabase() {
       console.log("✅ Created admin user");
     }
 
-    await Job.deleteMany({});
-    console.log("🗑️ Cleared existing jobs");
+    // Check and insert jobs only if they don't exist
+    let addedCount = 0;
+    for (const job of sampleJobs) {
+      const exists = await Job.findOne({ title: job.title, company: job.company });
+      if (!exists) {
+        await Job.create({
+          ...job,
+          postedBy: employer._id,
+        });
+        addedCount++;
+      }
+    }
 
-    const jobsWithEmployer = sampleJobs.map((job) => ({
-      ...job,
-      postedBy: employer._id,
-    }));
-
-    await Job.insertMany(jobsWithEmployer);
-    console.log(`✅ Added ${sampleJobs.length} jobs`);
+    console.log(`✅ Added ${addedCount} new jobs (skipped duplicates)`);
 
     const totalJobs = await Job.countDocuments();
     console.log(`📊 Total Jobs: ${totalJobs}`);
