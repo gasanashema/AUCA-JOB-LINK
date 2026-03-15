@@ -73,7 +73,11 @@ router.post('/:id/apply', auth, async (req, res) => {
     }
 
     job.applicants = job.applicants || [];
-    job.applicants.push({ user: req.user.id, appliedAt: new Date() });
+    job.applicants.push({ 
+      user: req.user.id, 
+      appliedAt: new Date(),
+      transcript: req.body.transcript || ""
+    });
     await job.save();
 
     res.json({ message: 'Application submitted' });

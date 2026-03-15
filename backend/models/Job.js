@@ -45,6 +45,10 @@ const JobSchema = new mongoose.Schema({
       appliedAt: {
         type: Date,
         default: Date.now
+      },
+      transcript: {
+        type: String,
+        default: ""
       }
     }
   ],

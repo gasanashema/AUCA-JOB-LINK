@@ -38,15 +38,37 @@
               No jobs available at the moment.
             </div>
             <div v-else class="jobs-grid">
-              <JobCard 
-                v-for="job in filteredJobs" 
-                :key="job._id"
-                :job="job"
-                :show-delete="false"
-                :show-apply="true"
-                :applied-jobs="appliedJobIds"
-                @apply="handleApply"
-              />
+              <div v-for="job in filteredJobs" :key="job._id" class="job-container">
+                <JobCard 
+                  :job="job"
+                  :show-delete="false"
+                  :show-apply="true"
+                  :applied-jobs="appliedJobIds"
+                  @apply="handleApply"
+                />
+                
+                <!-- Apply Modal with Transcript Upload -->
+                <div v-if="applyingTo === job._id" class="apply-overlay" @click.self="applyingTo = null">
+                  <div class="apply-modal">
+                    <h3>Apply for {{ job.title }}</h3>
+                    <p class="company">{{ job.company }}</p>
+                    
+                    <div class="upload-section">
+                      <label>Upload Your Transcript (PDF or Image)</label>
+                      <input type="file" @change="onFileChange" accept=".pdf,image/*" class="file-input" />
+                      <p v-if="selectedFileName" class="file-name">📎 Selected: {{ selectedFileName }}</p>
+                      <p v-if="fileError" class="error-text">{{ fileError }}</p>
+                    </div>
+
+                    <div class="modal-actions">
+                      <button @click="submitApplication" :disabled="submitting || !selectedFileBase64" class="confirm-btn">
+                        {{ submitting ? 'Submitting...' : 'Confirm Application' }}
+                      </button>
+                      <button @click="applyingTo = null" class="cancel-btn">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -92,6 +114,34 @@ const searchQuery = ref('');
 const appliedJobIds = ref([]);
 const appliedJobsFull = ref([]);
 const loadingApplied = ref(false);
+
+// Application State
+const applyingTo = ref(null);
+const selectedFileName = ref('');
+const selectedFileBase64 = ref('');
+const submitting = ref(false);
+const fileError = ref('');
+
+const onFileChange = (e) => {
+  const file = e.target.files[0];
+  fileError.value = '';
+  if (!file) return;
+  
+  if (file.size > 5 * 1024 * 1024) {
+    fileError.value = 'File size must be under 5MB';
+    return;
+  }
+
+  selectedFileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = () => {
+    selectedFileBase64.value = reader.result;
+  };
+  reader.onerror = () => {
+    fileError.value = 'Failed to read file';
+  };
+  reader.readAsDataURL(file);
+};
 
 const filteredJobs = computed(() => {
   if (!searchQuery.value) {
@@ -143,17 +193,31 @@ const handleLogout = () => {
 
 const applyError = ref('');
 
-const handleApply = async (job) => {
-  if (appliedJobIds.value.includes(job._id)) return;
+const handleApply = (job) => {
+  applyingTo.value = job._id;
+  selectedFileName.value = '';
+  selectedFileBase64.value = '';
+  fileError.value = '';
+};
+
+const submitApplication = async () => {
+  if (!selectedFileBase64.value) {
+    fileError.value = 'Please select a transcript file';
+    return;
+  }
+  
   try {
+    submitting.value = true;
     const token = localStorage.getItem('token');
-    await jobStore.applyToJob(job._id, token);
-    appliedJobIds.value.push(job._id);
-    // Refresh fully applied list in background
+    await jobStore.applyToJob(applyingTo.value, token, selectedFileBase64.value);
+    
+    appliedJobIds.value.push(applyingTo.value);
+    applyingTo.value = null;
     fetchAppliedData();
   } catch (err) {
-    applyError.value = err.response?.data?.message || 'Failed to apply';
-    setTimeout(() => applyError.value = '', 3000);
+    fileError.value = err.response?.data?.message || 'Failed to apply';
+  } finally {
+    submitting.value = false;
   }
 };
 </script>
@@ -290,5 +354,110 @@ const handleApply = async (job) => {
 .jobs-grid {
   display: grid;
   gap: 20px;
+}
+
+/* Apply Modal Styles */
+.apply-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.apply-modal {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.apply-modal h3 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.apply-modal .company {
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.upload-section {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.upload-section label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #555;
+}
+
+.file-input {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.file-name {
+  color: #27ae60;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.error-text {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.confirm-btn {
+  flex: 2;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: #5568d3;
+}
+
+.confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  flex: 1;
+  background: #eee;
+  color: #666;
+  border: none;
+  padding: 12px;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
 }
 </style>

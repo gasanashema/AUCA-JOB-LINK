@@ -64,8 +64,8 @@ export const useJobStore = defineStore('jobs', () => {
     }
   };
 
-  const applyToJob = async (jobId, token) => {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/apply`, {}, {
+  const applyToJob = async (jobId, token, transcript = "") => {
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/apply`, { transcript }, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return res.data;

@@ -118,6 +118,10 @@
             <div class="applicant-info">
               <strong>{{ app.user?.name || 'Unknown' }}</strong>
               <span>{{ app.user?.email || 'N/A' }}</span>
+              <div v-if="app.transcript" class="transcript-link">
+                <a @click.prevent="viewTranscript(app.transcript)" href="#">📄 View Transcript</a>
+              </div>
+              <span v-else class="no-transcript">No transcript uploaded</span>
             </div>
             <span class="applied-date">{{ new Date(app.appliedAt).toLocaleDateString() }}</span>
           </div>
@@ -315,6 +319,10 @@ export default {
       } finally {
         this.fetchingApplicants = false;
       }
+    },
+    viewTranscript(base64Data) {
+      const win = window.open();
+      win.document.write('<iframe src="' + base64Data + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
     },
     async deleteJob(id) {
       if (confirm("Delete this job?")) {
@@ -678,6 +686,28 @@ input, select, textarea {
 .applicant-info span {
   color: #777;
   font-size: 13px;
+}
+
+.transcript-link {
+  margin-top: 5px;
+}
+
+.transcript-link a {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.transcript-link a:hover {
+  text-decoration: underline;
+}
+
+.no-transcript {
+  color: #999 !important;
+  font-size: 12px !important;
+  margin-top: 5px;
+  font-style: italic;
 }
 
 .applied-date {
