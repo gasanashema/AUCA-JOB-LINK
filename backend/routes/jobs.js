@@ -83,6 +83,60 @@ router.post('/:id/apply', auth, async (req, res) => {
   }
 });
 
+// Update a job (only by poster or admin)
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    // allow if admin or owner
+    if (req.user.role !== "admin" && job.postedBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to edit this job" });
+    }
+
+    const { title, company, location, description, salary, jobType, requirements, minGrade, skills } = req.body;
+    
+    const updatedJob = await Job.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        company,
+        location: location || "",
+        description,
+        salary,
+        jobType,
+        requirements: requirements || [],
+        minGrade,
+        skills: skills || [],
+        updatedAt: Date.now()
+      },
+      { new: true }
+    );
+
+    res.json(updatedJob);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to update job" });
+  }
+});
+
+// Get applicants for a specific job (only by admin)
+router.get("/:id/applicants", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    const job = await Job.findById(req.params.id).populate("applicants.user", "name email");
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    res.json(job.applicants);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch applicants" });
+  }
+});
+
 // Get applied jobs for current user
 router.get('/applied', auth, async (req, res) => {
   try {

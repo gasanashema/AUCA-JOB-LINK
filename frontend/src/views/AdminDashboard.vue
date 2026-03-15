@@ -42,18 +42,37 @@
       <!-- Jobs Tab -->
       <div v-if="activeTab === 'jobs'" class="tab-content">
         <div class="section">
-          <h2>Post Job Opportunity</h2>
+          <h2>{{ isEditing ? 'Edit Job Opportunity' : 'Post Job Opportunity' }}</h2>
           <div class="form-card">
             <p v-if="jobSuccess" class="success">{{ jobSuccess }}</p>
             <p v-if="jobError" class="error">{{ jobError }}</p>
             <input v-model="jobTitle" placeholder="Job Title" />
-            <select v-model="jobCompany">
-              <option value="">Select Company</option>
-              <option v-for="(company, index) in companies" :key="index" :value="company">{{ company }}</option>
-            </select>
-            <input v-model="jobLocation" placeholder="Location (e.g., Kigali, Rwanda)" />
+            <div class="form-row">
+              <select v-model="jobCompany">
+                <option value="">Select Company</option>
+                <option v-for="(company, index) in companies" :key="index" :value="company">{{ company }}</option>
+              </select>
+              <input v-model="jobLocation" placeholder="Location (e.g., Kigali, Rwanda)" />
+            </div>
+            <div class="form-row">
+              <input v-model="jobSalary" placeholder="Salary (e.g., $800 - $1,200/month)" />
+              <select v-model="jobType">
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+                <option value="contract">Contract</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+            <input v-model="jobSkills" placeholder="Required Skills (comma separated: e.g. React, Node.js, CSS)" />
+            <input v-model="jobRequirements" placeholder="Other Requirements (comma separated)" />
             <textarea v-model="jobDescription" placeholder="Job Description" rows="6"></textarea>
-            <button @click="postJob" class="post-btn">Post Job</button>
+            
+            <div class="form-actions">
+              <button @click="isEditing ? updateJob() : postJob()" class="post-btn">
+                {{ isEditing ? 'Update Job' : 'Post Job' }}
+              </button>
+              <button v-if="isEditing" @click="cancelEdit" class="cancel-btn">Cancel</button>
+            </div>
           </div>
         </div>
 
@@ -63,13 +82,44 @@
           <div v-else class="jobs-list">
             <div v-for="job in jobs" :key="job._id" class="job-item">
               <div class="job-info">
-                <h3>{{ job.title }}</h3>
+                <div class="job-header">
+                   <h3>{{ job.title }}</h3>
+                   <span class="applicant-badge">{{ job.applicants?.length || 0 }} Applicants</span>
+                </div>
                 <p class="company">{{ job.company }}</p>
                 <p class="location">📍 {{ job.location }}</p>
                 <p class="desc">{{ job.description }}</p>
+                <div v-if="job.skills?.length" class="skills-preview">
+                   <span v-for="skill in job.skills" :key="skill" class="skill-tag">{{ skill }}</span>
+                </div>
               </div>
-              <button @click="deleteJob(job._id)" class="delete-btn">Delete</button>
+              <div class="job-actions">
+                <button @click="viewApplicants(job)" class="view-btn">Applicants</button>
+                <button @click="editJob(job)" class="edit-btn">Edit</button>
+                <button @click="deleteJob(job._id)" class="delete-btn">Delete</button>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Applicants Modal -->
+    <div v-if="showApplicantsModal" class="modal-overlay" @click.self="showApplicantsModal = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Applicants for {{ selectedJob?.title }}</h2>
+          <button @click="showApplicantsModal = false" class="close-btn">&times;</button>
+        </div>
+        <div class="applicants-list">
+          <div v-if="fetchingApplicants" class="modal-loading">Loading applicants...</div>
+          <div v-else-if="selectedApplicants.length === 0" class="no-data">No applicants yet.</div>
+          <div v-else v-for="app in selectedApplicants" :key="app.user?._id" class="applicant-item">
+            <div class="applicant-info">
+              <strong>{{ app.user?.name || 'Unknown' }}</strong>
+              <span>{{ app.user?.email || 'N/A' }}</span>
+            </div>
+            <span class="applied-date">{{ new Date(app.appliedAt).toLocaleDateString() }}</span>
           </div>
         </div>
       </div>
@@ -79,23 +129,41 @@
 
 <script>
 import axios from "axios";
+import { useJobStore } from '../stores/jobStore';
 
 export default {
   data() {
     return {
       activeTab: "companies",
-      companies: ["Google", "Microsoft", "Amazon", "Apple", "Meta"],
+      companies: ["Google", "Microsoft", "Amazon", "Apple", "Meta", "AC Group Ltd", "Irembo"],
       newCompany: "",
       companySuccess: "",
       companyError: "",
+      
+      // Job Form
       jobTitle: "",
       jobCompany: "",
       jobLocation: "Kigali, Rwanda",
+      jobSalary: "",
+      jobType: "full-time",
+      jobSkills: "",
+      jobRequirements: "",
       jobDescription: "",
+      
       jobs: [],
       loading: false,
       jobSuccess: "",
-      jobError: ""
+      jobError: "",
+      
+      // Editing
+      isEditing: false,
+      editingId: null,
+      
+      // Applicants Modal
+      showApplicantsModal: false,
+      selectedJob: null,
+      selectedApplicants: [],
+      fetchingApplicants: false
     };
   },
   async mounted() {
@@ -123,9 +191,12 @@ export default {
         this.jobSuccess = "";
         
         if (!this.jobTitle || !this.jobCompany || !this.jobDescription) {
-          this.jobError = "All fields required";
+          this.jobError = "Title, Company and Description are required";
           return;
         }
+
+        const skills = this.jobSkills ? this.jobSkills.split(',').map(s => s.trim()) : [];
+        const requirements = this.jobRequirements ? this.jobRequirements.split(',').map(s => s.trim()) : [];
 
         await axios.post(
           `${import.meta.env.VITE_API_URL}/api/jobs`,
@@ -133,7 +204,11 @@ export default {
             title: this.jobTitle,
             company: this.jobCompany,
             location: this.jobLocation,
-            description: this.jobDescription
+            salary: this.jobSalary,
+            jobType: this.jobType,
+            description: this.jobDescription,
+            skills,
+            requirements
           },
           {
             headers: {
@@ -143,14 +218,76 @@ export default {
         );
         
         this.jobSuccess = "Job posted successfully!";
-        this.jobTitle = "";
-        this.jobCompany = "";
-        this.jobLocation = "Kigali, Rwanda";
-        this.jobDescription = "";
+        this.resetForm();
         await this.fetchJobs();
       } catch (err) {
-        this.jobError = "Failed to post job";
+        this.jobError = err.response?.data?.message || "Failed to post job";
       }
+    },
+    async updateJob() {
+      try {
+        this.jobError = "";
+        this.jobSuccess = "";
+
+        const skills = this.jobSkills ? this.jobSkills.split(',').map(s => s.trim()) : [];
+        const requirements = this.jobRequirements ? this.jobRequirements.split(',').map(s => s.trim()) : [];
+
+        await axios.put(
+          `${import.meta.env.VITE_API_URL}/api/jobs/${this.editingId}`,
+          {
+            title: this.jobTitle,
+            company: this.jobCompany,
+            location: this.jobLocation,
+            salary: this.jobSalary,
+            jobType: this.jobType,
+            description: this.jobDescription,
+            skills,
+            requirements
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          }
+        );
+
+        this.jobSuccess = "Job updated successfully!";
+        this.isEditing = false;
+        this.editingId = null;
+        this.resetForm();
+        await this.fetchJobs();
+      } catch (err) {
+        this.jobError = err.response?.data?.message || "Failed to update job";
+      }
+    },
+    editJob(job) {
+      this.isEditing = true;
+      this.editingId = job._id;
+      this.jobTitle = job.title;
+      this.jobCompany = job.company;
+      this.jobLocation = job.location;
+      this.jobSalary = job.salary || "";
+      this.jobType = job.jobType || "full-time";
+      this.jobSkills = job.skills ? job.skills.join(', ') : "";
+      this.jobRequirements = job.requirements ? job.requirements.join(', ') : "";
+      this.jobDescription = job.description;
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    cancelEdit() {
+      this.isEditing = false;
+      this.editingId = null;
+      this.resetForm();
+    },
+    resetForm() {
+      this.jobTitle = "";
+      this.jobCompany = "";
+      this.jobLocation = "Kigali, Rwanda";
+      this.jobSalary = "";
+      this.jobType = "full-time";
+      this.jobSkills = "";
+      this.jobRequirements = "";
+      this.jobDescription = "";
     },
     async fetchJobs() {
       try {
@@ -161,6 +298,22 @@ export default {
         console.error(err);
       } finally {
         this.loading = false;
+      }
+    },
+    async viewApplicants(job) {
+      this.selectedJob = job;
+      this.showApplicantsModal = true;
+      this.fetchingApplicants = true;
+      this.selectedApplicants = [];
+      
+      try {
+        const jobStore = useJobStore();
+        const data = await jobStore.fetchApplicants(job._id, localStorage.getItem("token"));
+        this.selectedApplicants = data;
+      } catch (err) {
+        console.error("Failed to fetch applicants:", err);
+      } finally {
+        this.fetchingApplicants = false;
       }
     },
     async deleteJob(id) {
@@ -255,6 +408,7 @@ export default {
   cursor: pointer;
   font-size: 16px;
   font-weight: 600;
+  transition: all 0.3s;
 }
 
 .tabs button.active {
@@ -280,6 +434,12 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
 input, select, textarea {
   width: 100%;
   padding: 12px;
@@ -291,10 +451,27 @@ input, select, textarea {
   box-sizing: border-box;
 }
 
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .add-btn, .post-btn {
-  width: 100%;
+  flex: 2;
   padding: 12px;
   background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 12px;
+  background: #95a5a6;
   color: white;
   border: none;
   border-radius: 5px;
@@ -345,9 +522,25 @@ input, select, textarea {
   flex: 1;
 }
 
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
 .job-info h3 {
   font-size: 18px;
-  margin-bottom: 5px;
+  margin: 0;
+}
+
+.applicant-badge {
+  background: #e67e22;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .company {
@@ -365,6 +558,45 @@ input, select, textarea {
 .desc {
   color: #666;
   line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+.skills-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skill-tag {
+  background: #f0f2f5;
+  color: #476282;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.job-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.view-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background: #f1c40f;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
 .delete-btn {
@@ -376,8 +608,81 @@ input, select, textarea {
   cursor: pointer;
 }
 
-.delete-btn:hover {
-  background: #c0392b;
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
+.applicants-list {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.applicant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.applicant-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.applicant-info strong {
+  color: #333;
+}
+
+.applicant-info span {
+  color: #777;
+  font-size: 13px;
+}
+
+.applied-date {
+  font-size: 12px;
+  color: #999;
 }
 
 .loading {
@@ -385,4 +690,11 @@ input, select, textarea {
   padding: 40px;
   color: #666;
 }
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+

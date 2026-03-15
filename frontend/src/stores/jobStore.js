@@ -78,6 +78,18 @@ export const useJobStore = defineStore('jobs', () => {
     return res.data;
   };
 
+  const fetchApplicants = async (jobId, token) => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs/${jobId}/applicants`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data;
+    } catch (err) {
+      console.error('Error fetching applicants:', err);
+      throw err.response?.data || err;
+    }
+  };
+
   return {
     jobs,
     loading,
@@ -86,6 +98,7 @@ export const useJobStore = defineStore('jobs', () => {
     deleteJob,
     updateJob,
     applyToJob,
-    fetchAppliedJobs
+    fetchAppliedJobs,
+    fetchApplicants
   };
 });
