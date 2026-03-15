@@ -1,4 +1,4 @@
-seedDatabase();const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
@@ -35,10 +35,7 @@ const sampleJobs = [
 
 async function seedDatabase() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
 
     console.log("✅ Connected to MongoDB");
 
@@ -50,7 +47,7 @@ async function seedDatabase() {
       employer = await User.create({
         name: "AUCA Employer",
         email: "employer@auca.rw",
-        password: 12345,
+        password: employerPassword,
         role: "employer",
       });
       console.log("✅ Created demo employer user");
@@ -62,7 +59,7 @@ async function seedDatabase() {
       await User.create({
         name: 'System Admin',
         email: 'admin@auca.rw',
-        password: 'admin123',
+        password: adminPassword,
         role: 'admin'
       });
       console.log("✅ Created admin user");
