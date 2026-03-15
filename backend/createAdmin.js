@@ -1,35 +1,46 @@
+// createAdmin.js
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 require('dotenv').config();
 
 async function createAdmin() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/auca-job-link');
+    // Connect to MongoDB (Atlas / production DB only)
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log('✅ Connected to MongoDB');
 
+    // Check if admin already exists
     const adminExists = await User.findOne({ email: 'admin@auca.rw' });
     if (adminExists) {
       console.log('⚠️ Admin user already exists');
       console.log('Email: admin@auca.rw');
-      console.log('Password: admin123');
+      console.log('Password: admin123 (original default, hashed in DB)');
       process.exit(0);
     }
 
+    // Hash default password
+    const hashedPasword = await bcrypt.hash('admin123', 10);
+
+    // Create admin user
     await User.create({
       name: 'System Admin',
       email: 'admin@auca.rw',
-      password: 'admin123',
-      role: 'admin'
+      password: 12345,
+      role: 'admin',
     });
 
     console.log('✅ Admin user created successfully!');
     console.log('\nLogin credentials:');
     console.log('Email: admin@auca.rw');
-    console.log('Password: admin123');
+    console.log('Password: admin123 (hashed in DB)');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error:', error);
     process.exit(1);
   }
 }
