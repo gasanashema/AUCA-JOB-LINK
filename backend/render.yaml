@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: auca-job-link-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.18.0
+      - key: MONGODB_URI
+        sync: false
