@@ -6,11 +6,13 @@ const router = express.Router();
 
 // Get all jobs from DB
 router.get("/", async (req, res) => {
+  console.log("🔍 Fetching all jobs...");
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
+    console.log(`✅ Found ${jobs.length} jobs`);
     res.json(jobs);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Failed to fetch jobs:", err);
     res.status(500).json({ message: "Failed to fetch jobs" });
   }
 });

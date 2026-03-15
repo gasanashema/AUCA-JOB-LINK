@@ -8,11 +8,13 @@ export const useJobStore = defineStore('jobs', () => {
 
   const fetchJobs = async () => {
     loading.value = true;
+    console.log(`📡 Fetching jobs from: ${import.meta.env.VITE_API_URL}/api/jobs`);
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/jobs`);
+      console.log(`📦 Received ${res.data.length} jobs`);
       jobs.value = res.data;
     } catch (err) {
-      console.error('Error fetching jobs:', err);
+      console.error('❌ Error fetching jobs:', err);
     } finally {
       loading.value = false;
     }
