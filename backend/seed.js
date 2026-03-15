@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+seedDatabase();const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
@@ -56,13 +56,14 @@ async function seedDatabase() {
       console.log("✅ Created demo employer user");
     }
 
-    let admin = await User.findOne({ email: "admin@auca.rw" });
-    if (!admin) {
+    // Create admin user for testing
+    const adminExists = await User.findOne({ email: 'admin@auca.rw' });
+    if (!adminExists) {
       await User.create({
-        name: "System Admin",
-        email: "admin@auca.rw",
-        password: 12345,
-        role: "admin",
+        name: 'System Admin',
+        email: 'admin@auca.rw',
+        password: 'admin123',
+        role: 'admin'
       });
       console.log("✅ Created admin user");
     }
